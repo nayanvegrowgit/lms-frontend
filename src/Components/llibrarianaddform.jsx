@@ -1,54 +1,58 @@
-import React, { useState } from "react";
+import * as React from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Modal from "@mui/material/Modal";
 
-export default function LibrarianRegisration() {
-  const [formData, setFormData] = useState(new FormData());
+/*
+const style = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: 400,
+  bgcolor: "background.paper",
+  border: "2px solid #000",
+  boxShadow: 24,
+  p: 4,
+};
+*/
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prevData) => {
-      prevData.append(name, value);
-      return prevData;
-    });
-  };
-
-  const handleFileChange = (event) => {
-    setFormData((prevData) => {
-      prevData.append("file", event.target.files[0]);
-      return prevData;
-    });
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const response = await fetch("/api/submit-form", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (response.ok) {
-      // Handle successful response
-    } else {
-      // Handle error
-    }
-  };
+export default function BasicModal() {
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        name="name"
-        onChange={handleChange}
-        placeholder="Name"
-      />
-      <input
-        type="email"
-        name="email"
-        onChange={handleChange}
-        placeholder="Email"
-      />
-      <input type="file" name="file" onChange={handleFileChange} />
-      <button type="submit">Submit</button>
-    </form>
+    <div>
+      <Button onClick={handleOpen}> Modal </Button>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            border: "2px solid #000",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            Text in a modal
+          </Typography>
+          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+            Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+          </Typography>
+        </Box>
+      </Modal>
+    </div>
   );
 }

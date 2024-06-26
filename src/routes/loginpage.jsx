@@ -9,10 +9,10 @@ export default function LoginPage() {
   const [email, setEmailInput] = useState("");
   const [password, setPasswordInput] = useState("");
   const navigate = useNavigate();
-
+  const [userData, setUserData] = useState(null);
   useEffect(() => {
-    const userData = read_local();
-    console.log("userdata in home :: ", userData);
+    setUserData(read_local());
+    console.log("userdata in login page  :: ", userData);
     if (userData?.token && userData?.user?.id) {
       navigate("/app/dashboard");
     }
@@ -36,7 +36,8 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        console.log("Login error", error);
+        alert(`Login error, ${error}`);
+
         window.location.reload();
       });
     //login(email, password);

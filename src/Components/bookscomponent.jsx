@@ -1,12 +1,15 @@
 import React from "react";
 import { useState, useEffect } from "react";
+
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import {
+  Box,
   List,
   ListItem,
   ListItemText,
   Button,
   TextField,
+  Modal,
   Table,
   TableBody,
   Paper,
@@ -15,11 +18,13 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-
 import { styled } from "@mui/material/styles";
 import axios from "axios";
+import { Outlet, useNavigate } from "react-router-dom";
+
+import { my_date } from "../utils/consts";
 import { read_local } from "../utils/read_store";
-import { useNavigation } from "react-router-dom";
+import UpdateBookForm from "../Components/llibrarianaddform";
 const StyledList = styled(List)`
   display: flex;
   flex-wrap: wrap; /* Allow items to wrap if needed */
@@ -47,9 +52,9 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 function BookPage() {
-  const userData = read_local();
-  const navigate = useNavigation();
+  const navigate = useNavigate();
   const [listItems, setlistItems] = useState([]);
+  const userData = read_local();
 
   useEffect(() => {
     console.log("senging get req to http://localhost:8080/book/");
@@ -64,19 +69,9 @@ function BookPage() {
         setlistItems(response.data.books);
       })
       .catch((error) => {
-        alert(
-          `error status: ${error?.request?.status}  :message: ${error?.response?.data?.error} `
-        );
-        navigate(-1);
+        console.log("error in fetching book data : ", error);
       });
   }, []);
-
-  //const filtered = listItems.filter(
-  //(item) => console.log(item)
-  // item.title.toLowerCase().includes(searchText.toLowerCase()) ||
-  // item.publication.toLowerCase().includes(searchText.toLowerCase()) ||
-  // item.genre.toLowerCase().includes(searchText.toLowerCase())
-  // );
 
   return (
     <div>
@@ -91,18 +86,24 @@ function BookPage() {
               </TableRow>
 
               <TableRow>
-                <StyledTableCell align="center">{"ID"}</StyledTableCell>
-                <StyledTableCell align="center">{"Title"}</StyledTableCell>
-                <StyledTableCell align="center">{"Author"}</StyledTableCell>
-                <StyledTableCell align="center">{"Publisher"}</StyledTableCell>
-                <StyledTableCell align="center">
-                  {"PublicationDate"}
-                </StyledTableCell>
-                <StyledTableCell align="center">{"Edition"}</StyledTableCell>
-                <StyledTableCell align="center">{"Genre"}</StyledTableCell>
-                <StyledTableCell align="center">{"Total"}</StyledTableCell>
-                <StyledTableCell align="center">{"Available"}</StyledTableCell>
-                <StyledTableCell align="center">{"Action"}</StyledTableCell>
+                {[
+                  "ID",
+                  "Title",
+                  "Author",
+                  "Publisher",
+                  "PublicationDate",
+                  "Edition",
+                  "Genre",
+                  "Total",
+                  "Available",
+                  "Action",
+                ].map((labletext) => {
+                  return (
+                    <StyledTableCell key={labletext} align="center">
+                      {labletext}
+                    </StyledTableCell>
+                  );
+                })}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -135,24 +136,7 @@ function BookPage() {
                       {book.Available}
                     </StyledTableCell>
                     <StyledTableCell>
-                      {book.Available > 0 ? (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="primary"
-                        >
-                          Borrow
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="primary"
-                          disabled
-                        >
-                          Borrow
-                        </Button>
-                      )}
+                      <BookAction book={book} />
                     </StyledTableCell>
                   </StyledTableRow>
                 );
@@ -161,8 +145,114 @@ function BookPage() {
           </Table>
         </TableContainer>
       </div>
+      <div>
+        <Outlet />
+      </div>
     </div>
   );
 }
 
+const BookAction = ({ book }) => {
+  const navigate = useNavigate();
+  const userData = read_local();
+
+  const handleBorrowBook = (book) => {
+    const br = {
+      BookID: book.ID,
+      UserID: userData?.user?.id,
+      DateOfIssue: my_date(),
+      DateOfReturn: "",
+    };
+
+    console.log("data sent :: to borrow book ", br);
+    const headers = {
+      Authorization: String(userData?.token),
+      "Content-Type": "application/json",
+    };
+    console.log("senging get req to http://localhost:8080/borrow");
+    axios
+      .post("http://localhost:8080/borrow", br, { headers })
+      .then((response) => {
+        if (response?.data?.br) {
+          alert("Successful!");
+        }
+      })
+      .catch((error) => {
+        alert(
+          `error status: ${error?.request?.status}  :message: ${error?.response?.data?.error} `
+        );
+      });
+  };
+
+  const [open, setOpen] = useState(false);
+  const handleModalOpen = () => setOpen(true);
+  const handleModalClose = () => setOpen(false);
+  return (
+    <>
+      {console.log(`book :`, book)}
+      {userData?.user?.role_id == 3 ? (
+        book?.Available > 0 ? (
+          <Button
+            variant="contained"
+            size="small"
+            color="primary"
+            onClick={(e) => {
+              handleBorrowBook(book);
+              e.preventDefault();
+            }}
+          >
+            Borrow
+          </Button>
+        ) : (
+          <Button variant="contained" size="small" color="primary" disabled>
+            Borrow
+          </Button>
+        )
+      ) : (
+        <>
+          <Button
+            variant="contained"
+            size="small"
+            color="primary"
+            onClick={handleModalOpen}
+          >
+            Update
+          </Button>
+          <Modal
+            open={open}
+            onClose={handleModalClose}
+            aria-labelledby="modal-modal-title"
+            aria-describedby="modal-modal-description"
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: 400,
+                bgcolor: "background.paper",
+                border: "2px solid #000",
+                boxShadow: 24,
+                p: 4,
+              }}
+            >
+              <Typography id="modal-modal-title" variant="h6" component="h2">
+                Book : {book.Title}
+              </Typography>
+            </Box>
+          </Modal>
+        </>
+      )}
+    </>
+  );
+};
+
 export default BookPage;
+//const filtered = listItems.filter(
+//(item) => console.log(item)
+// item.title.toLowerCase().includes(searchText.toLowerCase()) ||
+// item.publication.toLowerCase().includes(searchText.toLowerCase()) ||
+// item.genre.toLowerCase().includes(searchText.toLowerCase())
+// );
+//<UpdateBookForm />
