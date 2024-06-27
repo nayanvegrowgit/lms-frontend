@@ -50,13 +50,13 @@ function AdminLibrarianPage() {
       .then((response) => {
         console.log(response);
         if (response.status === 200) {
-          write_local("localstate", null);
+          write_local(null);
           alert("Logout Scuccessful !!!!!!!!!!!!!!!!");
           navigate("/loginpage");
         }
       })
       .catch((error) => {
-        write_local("localstate", null);
+        write_local(null);
         console.log("Logout Error!!!", error);
         navigate("/loginpage");
       });

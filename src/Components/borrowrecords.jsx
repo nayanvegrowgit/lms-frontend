@@ -46,15 +46,15 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-function BorrowRecordsUser() {
+function BorrowRecords() {
   const userData = read_local();
   const navigate = useNavigate();
   const [listItems, setlistItems] = useState([]);
 
   useEffect(() => {
-    console.log("senging get req to http://localhost:8080/book/");
+    console.log("senging get req to http://localhost:8080/borrow");
     axios
-      .get("http://localhost:8080/borrowedbooks", {
+      .get("http://localhost:8080/borrow", {
         headers: {
           Authorization: String(userData?.token), // Edit the authorization key here
         },
@@ -80,38 +80,6 @@ function BorrowRecordsUser() {
   // item.publication.toLowerCase().includes(searchText.toLowerCase()) ||
   // item.genre.toLowerCase().includes(searchText.toLowerCase())
   // );
-  const handleReturnBook = (BorrRec) => {
-    console.log("record to updatre : ", BorrRec);
-    const br = {
-      id: BorrRec.br_id,
-    };
-    console.log("data sent :: to return book ", br);
-    const headers = {
-      Authorization: String(userData?.token),
-      "Content-Type": "application/json",
-    };
-    console.log("senging get req to http://localhost:8080/borrow/return");
-    axios
-      .post("http://localhost:8080/borrow/return", br, { headers })
-      .then((response) => {
-        console.log("responce :", response);
-        if (response?.data) {
-          alert("Successful!");
-          navigate(0);
-        }
-      })
-      .catch((error) => {
-        console.log("error : ", error);
-        alert(
-          `error status: ${error?.request?.status}  :message: ${error?.request?.statusText} `
-        );
-        if (error.response?.data?.error == "Signature has expired") {
-          write_local(null);
-          navigate("/loginpage");
-        }
-        navigate(0);
-      });
-  };
   return (
     <div>
       <div>
@@ -119,18 +87,19 @@ function BorrowRecordsUser() {
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
-                <StyledTableCell align="center" colSpan={10}>
-                  <h3>Books</h3>
+                <StyledTableCell align="center" colSpan={8}>
+                  <h3>Borrow Records</h3>
                 </StyledTableCell>
               </TableRow>
               <TableRow>
                 {[
                   "BrID",
                   "Book_Id",
+                  "User_Id",
                   "Title",
                   "Author",
-                  "date_of_issue",
-                  "date_of_return",
+                  "Date_Of_Issue",
+                  "Date_Of_Return",
                   "Action",
                 ].map((labletext) => {
                   return (
@@ -150,6 +119,9 @@ function BorrowRecordsUser() {
                       {br.book_id}
                     </StyledTableCell>
                     <StyledTableCell align="center" scope="row">
+                      {br.user_id}
+                    </StyledTableCell>
+                    <StyledTableCell align="center" scope="row">
                       {br.title}
                     </StyledTableCell>
                     <StyledTableCell align="center" scope="row">
@@ -161,33 +133,33 @@ function BorrowRecordsUser() {
                     <StyledTableCell align="center" scope="row">
                       {br.date_of_return == "" ? "--" : `${br.date_of_return}`}
                     </StyledTableCell>
-                    <StyledTableCell>
-                      {br.date_of_return == "" ? (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="primary"
-                          onClick={(e) => {
-                            {
-                              console.log("br button : ", br);
-                            }
-                            handleReturnBook(br);
-                            e.preventDefault();
-                          }}
-                        >
-                          Return
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="primary"
-                          disabled
-                        >
-                          Return
-                        </Button>
-                      )}
-                    </StyledTableCell>
+                    {/*<StyledTableCell>
+                            {br.date_of_return == "" ? (
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    color="primary"
+                                    onClick={(e) => {
+                                        {
+                                            console.log("br button : ", br);
+                                        }
+                                        handleReturnBook(br);
+                                        e.preventDefault();
+                                    }}
+                                >
+                                    Return
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    color="primary"
+                                    disabled
+                                >
+                                    Return
+                                </Button>
+                            )}
+                        </StyledTableCell>*/}
                   </StyledTableRow>
                 );
               })}
@@ -199,4 +171,4 @@ function BorrowRecordsUser() {
   );
 }
 
-export default BorrowRecordsUser;
+export default BorrowRecords;

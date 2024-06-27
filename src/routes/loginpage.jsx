@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [password, setPasswordInput] = useState("");
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
+
   useEffect(() => {
     setUserData(read_local());
     console.log("userdata in login page  :: ", userData);
@@ -37,7 +38,10 @@ export default function LoginPage() {
       })
       .catch((error) => {
         alert(`Login error, ${error}`);
-
+        if (error.response?.data?.error == "Signature has expired") {
+          write_local(null);
+          navigate("/loginpage");
+        }
         window.location.reload();
       });
     //login(email, password);

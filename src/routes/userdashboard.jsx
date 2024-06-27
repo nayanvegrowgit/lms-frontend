@@ -19,6 +19,7 @@ import {
   MenuItem,
   Button,
   Grid,
+  Paper,
 } from "@mui/material";
 
 import { deepPurple } from "@mui/material/colors";
@@ -26,28 +27,26 @@ import { deepPurple } from "@mui/material/colors";
 import { read_local, write_local } from "../utils/read_store";
 import { logout } from "../utils/logout_login";
 
-import BookPage from "../Components/bookscomponent";
-
 const drawerWidth = 240;
 const DrawerOptions = [
   ["Manage Books", "Manage Librarians", "Manage Users", "Borrowing Records"],
   ["Manage Books", "Manage Users", "Borrowing Records"],
   ["Books", "Borrowing History"],
 ];
+const roles = ["Admin", "Librarian", "Member"];
+
 const UserDashboard = () => {
   const navigate = useNavigate();
   const userData = read_local();
+  const menuRef = useRef(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+
   useEffect(() => {
     if (!userData) {
       console.log("navigate to login page from dashboard ");
       navigate("/loginpage");
     }
   }, []);
-
-  const roles = ["Admin", "Librarian", "Member"];
-  const menuRef = useRef(null);
-
-  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleProfileClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -57,16 +56,22 @@ const UserDashboard = () => {
     setAnchorEl(null);
   };
 
+  const [routechild, setRouteChild] = useState("books");
+  useEffect(() => {
+    navigate(routechild);
+  }, [routechild]);
+
   const handleListButtonClick = (role, action) => {
     const expr = role * 10 + action;
     switch (expr) {
       case 10:
       case 20:
         console.log("Manage Book");
-        navigate("books");
+        setRouteChild("books");
         break;
       case 11:
         console.log("Manage Librarian");
+
         break;
       case 12:
       case 21:
@@ -75,17 +80,18 @@ const UserDashboard = () => {
       case 13:
       case 22:
         console.log("Borrowing Records");
+        setRouteChild("borrowrecords");
         break;
       case 30:
         console.log("Book Issue User");
-        navigate("books");
+        setRouteChild("books");
         break;
       case 31:
-        navigate("myborrowhistory");
-        console.log("Borrowing History User");
+        console.log("Borrowing History user");
+        setRouteChild("myborrowhistory");
         break;
       default:
-        console.log(`Sorry, we are out of ${expr}.`);
+        setRouteChild("books");
     }
   };
   const handleLogoutClick = (e) => {
@@ -182,10 +188,11 @@ const UserDashboard = () => {
             <List>
               {DrawerOptions[userData?.user?.role_id - 1]?.map(
                 (text, index) => (
-                  <ListItem key={text} disablePadding>
+                  <ListItem key={text} gap={3} margin={"2px 5px"}>
                     <ListItemButton
-                      onClick={() => {
+                      onClick={(e) => {
                         handleListButtonClick(userData?.user?.role_id, index);
+                        e.preventDefault();
                       }}
                     >
                       <ListItemText primary={text} />
@@ -197,9 +204,12 @@ const UserDashboard = () => {
           </Box>
         </Drawer>
         <Box
+          position={"sticky"}
           component="main"
           sx={{ flexGrow: 1, p: 3, margin: "70px 0px 5px 0px" }}
         >
+          {/*<Elevation />*/}
+
           <Outlet />
           <Toolbar />
         </Box>

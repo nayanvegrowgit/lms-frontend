@@ -20,7 +20,8 @@ import BookPage from "./Components/bookscomponent";
 import BorrowRecordsUser from "./Components/borrowrecordsuser";
 import AdminLibrarianPage from "./Components/adminlibrarianpage";
 import UpdateBookForm from "./Components/llibrarianaddform";
-
+import BorrowRecords from "./Components/borrowrecords";
+import Elevation from "./Components/profile";
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
@@ -28,8 +29,8 @@ const router = createBrowserRouter(
         <Route path="/app/dashboard" element={<UserDashboard />}>
           {/* <Route path="managebooks" element={<ManageBook />} />
           <Route path="managelibrarians" element={<ManageLibrarians />} />
-          <Route path="manageusers" element={<ManageUsers />} />
-          <Route path="borrowingrecords" element={<BorrowingRecords />} />*/}
+          <Route path="manageusers" element={<ManageUsers />} />*/}
+          <Route path="borrowrecords" element={<BorrowRecords />} />
           <Route path="books" element={<BookPage />}>
             <Route path="updatebook" element={<UpdateBookForm />} />
           </Route>
@@ -38,6 +39,7 @@ const router = createBrowserRouter(
       </Route>
       <Route path="/loginpage" element={<LoginPage />} />
       <Route path="/registration" element={<Registration />} />
+      <Route path="/elevation" element={<Elevation />} />
       <Route path="/*" element={<Navigate to="/loginpage" replace />} />
     </>
   )

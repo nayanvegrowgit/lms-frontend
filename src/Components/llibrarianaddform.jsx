@@ -1,58 +1,74 @@
-import * as React from "react";
-import Box from "@mui/material/Box";
+import React, { useState } from "react";
+import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import Modal from "@mui/material/Modal";
 
-/*
-const style = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 400,
-  bgcolor: "background.paper",
-  border: "2px solid #000",
-  boxShadow: 24,
-  p: 4,
-};
-*/
+const UpdateBookForm = ({ initialBookData }) => {
+  const [bookData, setBookData] = useState(initialBookData);
 
-export default function BasicModal() {
-  const [open, setOpen] = React.useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleFormChange = (event) => {
+    setBookData({ ...bookData, [event.target.name]: event.target.value });
+  };
+
+  const handleFormSubmit = (event) => {
+    event.preventDefault();
+    // Implement logic to submit updated book data (e.g., using an API call)
+    console.log("Submitting updated book data:", bookData);
+  };
 
   return (
-    <div>
-      <Button onClick={handleOpen}> Modal </Button>
-      <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            border: "2px solid #000",
-            boxShadow: 24,
-            p: 4,
-          }}
-        >
-          <Typography id="modal-modal-title" variant="h6" component="h2">
-            Text in a modal
-          </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-          </Typography>
-        </Box>
-      </Modal>
-    </div>
+    <form onSubmit={handleFormSubmit}>
+      <TextField
+        label="Title"
+        name="title"
+        value={bookData?.title}
+        onChange={handleFormChange}
+        fullWidth
+        required
+      />
+      <TextField
+        label="Author"
+        name="author"
+        value={bookData?.author}
+        onChange={handleFormChange}
+        fullWidth
+      />
+      <TextField
+        label="Edition"
+        name="edition"
+        type="number"
+        value={bookData?.edition}
+        onChange={handleFormChange}
+        fullWidth
+        required
+      />
+      <TextField
+        label="Publisher"
+        name="publisher"
+        value={bookData?.publisher}
+        onChange={handleFormChange}
+        fullWidth
+      />
+      <TextField
+        label="Publication Date"
+        name="publicationDate"
+        type="date"
+        value={bookData?.publication_date}
+        onChange={handleFormChange}
+        fullWidth
+        InputLabelProps={{ shrink: true }}
+      />
+      <TextField
+        label="Genre"
+        name="genre"
+        value={bookData?.genre}
+        onChange={handleFormChange}
+        fullWidth
+      />
+      <Button variant="contained" type="submit" color="primary">
+        Update Book
+      </Button>
+    </form>
   );
-}
+};
+
+export default UpdateBookForm;

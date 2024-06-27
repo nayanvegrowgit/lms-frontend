@@ -5,7 +5,7 @@ import { read_local } from "../utils/read_store";
 const Home = () => {
   const navigate = useNavigate();
   useEffect(() => {
-    const userData = read_local("localstate");
+    const userData = read_local();
     if (!userData) {
       navigate("/loginpage");
     }
