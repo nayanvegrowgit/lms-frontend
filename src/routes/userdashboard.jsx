@@ -24,7 +24,7 @@ import {
 
 import { deepPurple } from "@mui/material/colors";
 
-import { read_local, write_local } from "../utils/read_store";
+import { read_local_userdata, write_local_userdata } from "../utils/read_store";
 import { logout } from "../utils/logout_login";
 
 const drawerWidth = 240;
@@ -37,7 +37,7 @@ const roles = ["Admin", "Librarian", "Member"];
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const userData = read_local();
+  const userData = read_local_userdata();
   const menuRef = useRef(null);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -71,7 +71,7 @@ const UserDashboard = () => {
         break;
       case 11:
         console.log("Manage Librarian");
-
+        setRouteChild("managelibrarians");
         break;
       case 12:
       case 21:
@@ -99,13 +99,13 @@ const UserDashboard = () => {
       .then((response) => {
         console.log(response);
         if (response.status === 200) {
-          write_local(null);
+          write_local_userdata(null);
           alert("Logout Scuccessful !!!!!!!!!!!!!!!!");
           navigate("/loginpage");
         }
       })
       .catch((error) => {
-        write_local(null);
+        write_local_userdata(null);
         console.log("Logout Error!!!", error);
         navigate("/loginpage");
       });

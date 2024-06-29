@@ -1,9 +1,9 @@
 import axios from "axios";
-
-import { read_local } from "./read_store";
+import { useNavigate } from "react-router-dom";
+import { read_local_userdata } from "./read_store";
 
 export function logout() {
-  const userData = read_local();
+  const userData = read_local_userdata();
   const responce = axios.delete("http://localhost:3001/logout", {
     headers: {
       Authorization: String(userData.token), // Edit the authorization key here
@@ -20,4 +20,10 @@ export function login(email, password) {
     },
   });
   return responce;
+}
+export function handleSessionExpiry() {
+  const navigate = useNavigate();
+  write_local_userdata(null);
+  alert("Session expiired please login again");
+  navigate("/loginpage");
 }

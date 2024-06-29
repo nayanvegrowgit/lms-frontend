@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation, Form } from "react-router-dom";
 
-import { write_local } from "../utils/read_store";
+import { write_local_userdata } from "../utils/read_store";
 import axios from "axios";
 import { Box, Stack, TextField, Button, Typography } from "@mui/material";
 import { Role } from "../utils/consts";
@@ -42,7 +42,7 @@ function Registration() {
             user: response.data.user,
             token: response.headers.authorization,
           };
-          write_local(s);
+          write_local_userdata(s);
           alert("Registration Scuccessful !!!");
           navigate("/dashboard");
         } else {

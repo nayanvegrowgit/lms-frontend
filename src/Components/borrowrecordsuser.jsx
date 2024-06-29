@@ -18,7 +18,7 @@ import {
 
 import { styled } from "@mui/material/styles";
 import axios from "axios";
-import { read_local } from "../utils/read_store";
+import { read_local_userdata, write_local_userdata } from "../utils/read_store";
 import { useNavigate } from "react-router-dom";
 const StyledList = styled(List)`
   display: flex;
@@ -47,10 +47,10 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 function BorrowRecordsUser() {
-  const userData = read_local();
+  const userData = read_local_userdata();
   const navigate = useNavigate();
   const [listItems, setlistItems] = useState([]);
-
+  const [reload, setReload] = useState(false);
   useEffect(() => {
     console.log("senging get req to http://localhost:8080/book/");
     axios
@@ -68,11 +68,11 @@ function BorrowRecordsUser() {
           `error status: ${error?.request?.status}  :message: ${error?.response?.data} `
         );
         if (error.response?.data?.error == "Signature has expired") {
-          write_local(null);
+          write_local_userdata(null);
           navigate("/loginpage");
         }
       });
-  }, []);
+  }, [reload]);
 
   //const filtered = listItems.filter(
   //(item) => console.log(item)
@@ -97,7 +97,7 @@ function BorrowRecordsUser() {
         console.log("responce :", response);
         if (response?.data) {
           alert("Successful!");
-          navigate(0);
+          setReload(!reload);
         }
       })
       .catch((error) => {
@@ -106,10 +106,9 @@ function BorrowRecordsUser() {
           `error status: ${error?.request?.status}  :message: ${error?.request?.statusText} `
         );
         if (error.response?.data?.error == "Signature has expired") {
-          write_local(null);
+          write_local_userdata(null);
           navigate("/loginpage");
         }
-        navigate(0);
       });
   };
   return (

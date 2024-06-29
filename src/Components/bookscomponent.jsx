@@ -18,12 +18,13 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+
 import { styled } from "@mui/material/styles";
 import axios from "axios";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import { my_date } from "../utils/consts";
-import { read_local, write_local } from "../utils/read_store";
+import { read_local_userdata, write_local_userdata } from "../utils/read_store";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -54,12 +55,67 @@ const Item = styled(Paper)(({ theme }) => ({
   marginBottom: "5px",
 }));
 
+const StyledFormRow = styled(Paper)(() => ({
+  marginBottom: "9px",
+}));
+const limit = 5;
+
 function BookPage() {
   const navigate = useNavigate();
-  const [offset, setOffset] = useState(0);
-  const limit = 10;
+  const userData = read_local_userdata();
+
   const [listItems, setlistItems] = useState([]);
-  const userData = read_local();
+  const [reload, setReload] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [updatebookopen, setUpdateBookOpen] = useState(false);
+  const [addbookopen, setAddBookOpen] = useState(false);
+  const [total_num_books, setTotals] = useState([0, 0, 0, 0]);
+
+  const [newbookData, setNewBookData] = useState({
+    title: "",
+    author: "",
+    edition: 0,
+    publisher: "",
+    publication_date: "",
+    genre: "",
+    total: 0,
+  });
+
+  const [updateBookData, setUpdateBookData] = useState({
+    title: "",
+    author: "",
+    publisher: "",
+    publication_date: "",
+    edition: parseInt("0"),
+    genre: "",
+  });
+
+  const handleBookAddModalOpen = () => setAddBookOpen(true);
+  const handleBookAddModalClose = () => setAddBookOpen(false);
+
+  const handleUpdateModalOpen = (book) => {
+    setUpdateBookData({
+      title: book.title,
+      author: book.author,
+      publisher: book.publisher,
+      publication_date: book.publication_date,
+      edition: parseInt(book.edition),
+      genre: book.genre,
+    });
+    setUpdateBookOpen(true);
+  };
+  const handleUpdateModalClose = () => setUpdateBookOpen(false);
+  const handleBookAddFormChange = (event) => {
+    setNewBookData({ ...newbookData, [event.target.name]: event.target.value });
+    event.preventDefault();
+  };
+  const handleUpdateFormChange = (event) => {
+    setUpdateBookData({
+      ...updateBookData,
+      [event.target.name]: event.target.value,
+    });
+    event.preventDefault();
+  };
 
   useEffect(() => {
     console.log("senging get req to http://localhost:8080/gettotal");
@@ -70,15 +126,19 @@ function BookPage() {
         },
       })
       .then((response) => {
-        console.log("responce : ", response?.data);
+        setTotals([
+          response?.data?.sum?.total,
+          response?.data?.sum?.available,
+          ...total_num_books.slice(2),
+        ]);
       })
       .catch((error) => {
-        console.log(
-          "error in fetching book data : ",
-          error.response?.data?.error
-        );
+        console.log("error: ", error.message);
+        console.log("Request status : ", error.code);
+        console.log("Request status : ", error.request.status);
+        console.log("get  total Error responce data :: ", error.response?.data);
         if (error.response?.data?.error == "Signature has expired") {
-          write_local(null);
+          write_local_userdata(null);
           navigate("/loginpage");
         }
       });
@@ -96,46 +156,149 @@ function BookPage() {
         },
       })
       .then((response) => {
-        console.log("responce : ", response.data.books);
         setlistItems(response.data.books);
       })
       .catch((error) => {
-        console.log(
-          "error in fetching book data : ",
-          error.response?.data?.error
-        );
+        console.log("error: ", error.message);
+        console.log("Request status : ", error.code);
         if (error.response?.data?.error == "Signature has expired") {
-          write_local(null);
+          write_local_userdata(null);
+          alert("Session Signature has expired,\nTrylogin again");
           navigate("/loginpage");
         }
       });
-  }, []);
+  }, [offset, reload]);
 
   useEffect(() => {
     if (listItems?.length > 0) {
-      const sum = listItems.reduceRight(
-        (accumulator, currentValue, index, array) =>
-          accumulator + currentValue.total,
+      const local_total = listItems.reduceRight(
+        (accumulator, currentValue) => accumulator + currentValue.total,
         0
       );
-      console.log("sum :: ", sum);
+      const local_available = listItems.reduceRight(
+        (accumulator, currentValue) => accumulator + currentValue.available,
+        0
+      );
+      console.log("sum :: ", local_total);
+      console.log("av ::", local_available);
+      setTotals([...total_num_books.slice(0, 2), local_total, local_available]);
     }
   }, [listItems]);
+
+  const handleBorrowBook = (book) => {
+    const br = {
+      book_id: book.id,
+      user_id: userData?.user?.id,
+      date_of_issue: my_date(),
+      date_of_return: "",
+    };
+
+    console.log("data sent :: to borrow book ", br);
+    const headers = {
+      Authorization: String(userData?.token),
+      "Content-Type": "application/json",
+    };
+    console.log("senging get req to http://localhost:8080/borrow");
+    axios
+      .post("http://localhost:8080/borrow", br, { headers })
+      .then((response) => {
+        if (response?.data?.br) {
+          alert("Successful!");
+          setReload(!reload);
+        }
+      })
+      .catch((error) => {
+        alert(
+          `error status: ${error?.request?.status}  :message: ${error?.response?.data?.error} `
+        );
+        if (error.response?.data?.error == "Signature has expired") {
+          write_local_userdata(null);
+          navigate("/loginpage");
+        }
+      });
+  };
+
+  const handleUpdateFormSubmit = () => {
+    console.log("Submitting updated book data:", updatebookData);
+    const data = {
+      id: updatebookData.id,
+      title: updatebookData.title,
+      author: updatebookData.author,
+      publisher: updatebookData.publisher,
+      publication_date: updatebookData.publication_date,
+      edition: parseInt(updatebookData.edition),
+      genre: updatebookData.genre,
+    };
+    const headers = {
+      Authorization: String(userData?.token),
+      "Content-Type": "application/json",
+    };
+    console.log("senging put req to http://localhost:8080/bookupdate");
+    axios
+      .patch("http://localhost:8080/bookupdate", data, { headers })
+      .then((response) => {
+        console.log("add book responce : ", response);
+        setReload(!reload);
+      })
+      .catch((error) => {
+        console.log("error : ", error);
+        if (error.response?.data?.error == "Signature has expired") {
+          write_local_userdata(null);
+          navigate("/loginpage");
+        }
+      });
+  };
+
+  const handleBookAddFormSubmit = () => {
+    const data = {
+      id: newbookData.id,
+      title: newbookData.title,
+      author: newbookData.author,
+      publisher: newbookData.publisher,
+      publication_date: newbookData.publication_date,
+      edition: parseInt(newbookData.edition),
+      genre: newbookData.genre,
+      total: parseInt(newbookData.total),
+      available: parseInt(newbookData.total),
+    };
+    const headers = {
+      Authorization: String(userData?.token),
+      "Content-Type": "application/json",
+    };
+    console.log("senging put req to http://localhost:8080/bookcreate");
+    axios
+      .post("http://localhost:8080/bookcreate", data, { headers })
+      .then((response) => {
+        if (response?.data) {
+          alert("Successful!", response?.data);
+        }
+        setReload(!reload);
+      })
+      .catch((error) => {
+        alert(
+          `error status: ${error?.request?.status}  :message: ${error?.response?.data?.error} `
+        );
+        if (error.response?.data?.error == "Signature has expired") {
+          write_local_userdata(null);
+          navigate("/loginpage");
+        }
+      });
+  };
 
   return (
     <div>
       <Box rowGap={2} display={"flex"} justifyContent={"flex-end"} gap="5px">
         <Item key={1} elevation={2}>
-          {`elevation=2`}
+          {`Total : ${total_num_books[0]}`}
         </Item>
         <Item key={2} elevation={1}>
-          {`elevation=2`}
+          {`Available : ${total_num_books[1]}`}
         </Item>
         <Item key={3} elevation={2}>
-          {`elevation=2`}
+          {`Page Total : ${total_num_books[2]}`}
         </Item>
         <Item key={4} elevation={1}>
-          {`elevation=2`}
+          {`Page Available : ${total_num_books[3]}`}
         </Item>
       </Box>
       <div>
@@ -197,25 +360,328 @@ function BookPage() {
                     <StyledTableCell align="center" scope="row">
                       {book.genre}
                     </StyledTableCell>
-
                     {userData?.user?.role_id != 3 && (
                       <StyledTableCell align="center" scope="row">
                         {book.total}
                       </StyledTableCell>
                     )}
-                    {/*setBookCount([
-                      bookcount[0] + book.total,
-                      bookcount[1] + book.available,
-                    ])*/}
                     <StyledTableCell align="center" scope="row">
                       {book.available}
                     </StyledTableCell>
+
                     <StyledTableCell>
-                      <BookAction book={book} />
+                      <>
+                        {userData?.user?.role_id == 3 ? (
+                          book?.available > 0 ? (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleBorrowBook(book);
+                              }}
+                            >
+                              Borrow
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              disabled
+                            >
+                              Borrow
+                            </Button>
+                          )
+                        ) : (
+                          <>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleUpdateModalOpen(book);
+                              }}
+                            >
+                              Update
+                            </Button>
+                            <Modal
+                              open={updatebookopen}
+                              onClose={handleUpdateModalClose}
+                              aria-labelledby="modal-modal-title"
+                              aria-describedby="modal-modal-description"
+                            >
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: "50%",
+                                  left: "50%",
+                                  transform: "translate(-50%, -50%)",
+                                  width: 400,
+                                  bgcolor: "background.paper",
+                                  border: "2px solid #000",
+                                  boxShadow: 24,
+                                  form: { margin: "10px 0" },
+                                  p: 4,
+                                }}
+                              >
+                                <Typography
+                                  id="modal-modal-title"
+                                  variant="h6"
+                                  component="h2"
+                                  margin="10px 0"
+                                >
+                                  Update Book : {book.title}
+                                </Typography>
+                                <form
+                                  onSubmit={(e) => {
+                                    e.preventDefault();
+                                    handleUpdateFormSubmit();
+                                    handleUpdateModalClose();
+                                  }}
+                                >
+                                  <StyledFormRow>
+                                    <TextField
+                                      label="Title"
+                                      name="title"
+                                      value={updateBookData.title}
+                                      onChange={handleUpdateFormChange}
+                                      fullWidth
+                                      required
+                                    />
+                                  </StyledFormRow>
+                                  <StyledFormRow>
+                                    <TextField
+                                      label="Author"
+                                      name="author"
+                                      value={updateBookData.author}
+                                      onChange={handleUpdateFormChange}
+                                      fullWidth
+                                    />
+                                  </StyledFormRow>
+                                  <StyledFormRow>
+                                    <TextField
+                                      label="Edition"
+                                      name="edition"
+                                      type="number"
+                                      value={updateBookData.edition}
+                                      onChange={handleUpdateFormChange}
+                                      fullWidth
+                                      required
+                                    />
+                                  </StyledFormRow>
+                                  <StyledFormRow>
+                                    <TextField
+                                      label="Publisher"
+                                      name="publisher"
+                                      value={updateBookData.publisher}
+                                      onChange={handleUpdateFormChange}
+                                      fullWidth
+                                    />
+                                  </StyledFormRow>
+                                  <StyledFormRow>
+                                    <TextField
+                                      label="Publication Date"
+                                      name="publication_date"
+                                      type="date"
+                                      value={updateBookData.publication_date}
+                                      onChange={handleUpdateFormChange}
+                                      fullWidth
+                                      InputLabelProps={{ shrink: true }}
+                                    />
+                                  </StyledFormRow>
+                                  <StyledFormRow>
+                                    <TextField
+                                      label="Genre"
+                                      name="genre"
+                                      value={updateBookData.genre}
+                                      onChange={handleUpdateFormChange}
+                                      fullWidth
+                                    />
+                                  </StyledFormRow>
+                                  <StyledFormRow>
+                                    <Button
+                                      variant="contained"
+                                      type="submit"
+                                      color="primary"
+                                    >
+                                      Update Book
+                                    </Button>
+                                  </StyledFormRow>
+                                </form>
+                              </Box>
+                            </Modal>
+                          </>
+                        )}
+                      </>
                     </StyledTableCell>
                   </StyledTableRow>
                 );
               })}
+              <TableRow>
+                {userData?.user?.role_id != 3 && (
+                  <StyledTableCell align="center" colSpan={1}>
+                    <>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        color="primary"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleBookAddModalOpen();
+                        }}
+                      >
+                        Add
+                      </Button>
+                      <Modal
+                        open={addbookopen}
+                        onClose={handleBookAddModalClose}
+                        aria-labelledby="modal-modal-title"
+                        aria-describedby="modal-modal-description"
+                      >
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: 400,
+                            bgcolor: "background.paper",
+                            border: "2px solid #000",
+                            boxShadow: 24,
+                            form: { margin: "10px 0" },
+                            p: 4,
+                          }}
+                        >
+                          <Typography
+                            id="modal-modal-title"
+                            variant="h6"
+                            component="h2"
+                            margin="10px 0"
+                          >
+                            Book Details:
+                          </Typography>
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              handleBookAddFormSubmit();
+                              handleBookAddModalClose();
+                            }}
+                          >
+                            <StyledFormRow>
+                              <TextField
+                                label="Title"
+                                name="title"
+                                value={newbookData.title}
+                                onChange={handleBookAddFormChange}
+                                fullWidth
+                                required
+                              />
+                            </StyledFormRow>
+                            <StyledFormRow>
+                              <TextField
+                                label="Author"
+                                name="author"
+                                value={newbookData.author}
+                                onChange={handleBookAddFormChange}
+                                fullWidth
+                              />
+                            </StyledFormRow>
+                            <StyledFormRow>
+                              <TextField
+                                label="Edition"
+                                name="edition"
+                                type="number"
+                                value={newbookData.edition}
+                                onChange={handleBookAddFormChange}
+                                fullWidth
+                                required
+                              />
+                            </StyledFormRow>
+                            <StyledFormRow>
+                              <TextField
+                                label="Publisher"
+                                name="publisher"
+                                value={newbookData.publisher}
+                                onChange={handleBookAddFormChange}
+                                fullWidth
+                              />
+                            </StyledFormRow>
+                            <StyledFormRow>
+                              <TextField
+                                label="Publication Date"
+                                name="publication_date"
+                                type="date"
+                                value={newbookData.publication_date}
+                                onChange={handleBookAddFormChange}
+                                fullWidth
+                                InputLabelProps={{ shrink: true }}
+                              />
+                            </StyledFormRow>
+                            <StyledFormRow>
+                              <TextField
+                                label="Genre"
+                                name="genre"
+                                value={newbookData.genre}
+                                onChange={handleBookAddFormChange}
+                                fullWidth
+                              />
+                            </StyledFormRow>
+                            <StyledFormRow>
+                              <TextField
+                                label="NumberOfCopies"
+                                name="total"
+                                value={newbookData.total}
+                                onChange={handleBookAddFormChange}
+                                fullWidth
+                              />
+                            </StyledFormRow>
+                            <StyledFormRow>
+                              <Button
+                                variant="contained"
+                                type="submit"
+                                color="primary"
+                              >
+                                Add Book
+                              </Button>
+                            </StyledFormRow>
+                          </form>
+                        </Box>
+                      </Modal>
+                    </>
+                  </StyledTableCell>
+                )}
+                <StyledTableCell align="center" colSpan={1}>
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOffset(offset - limit);
+                    }}
+                    disabled={offset == 0 ? true : false}
+                  >
+                    Previous
+                  </Button>
+                </StyledTableCell>
+                <StyledTableCell align="center" colSpan={1}>
+                  <Button
+                    disabled={
+                      listItems
+                        ? listItems.length < limit
+                          ? true
+                          : false
+                        : true
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOffset(offset + limit);
+                    }}
+                  >
+                    Next
+                  </Button>
+                </StyledTableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>
@@ -226,177 +692,4 @@ function BookPage() {
     </div>
   );
 }
-
-const BookAction = ({ book }) => {
-  const navigate = useNavigate();
-  const userData = read_local();
-
-  const handleBorrowBook = (book) => {
-    const br = {
-      book_id: book.id,
-      user_id: userData?.user?.id,
-      date_of_issue: my_date(),
-      date_of_return: "",
-    };
-
-    console.log("data sent :: to borrow book ", br);
-    const headers = {
-      Authorization: String(userData?.token),
-      "Content-Type": "application/json",
-    };
-    console.log("senging get req to http://localhost:8080/borrow");
-    axios
-      .post("http://localhost:8080/borrow", br, { headers })
-      .then((response) => {
-        if (response?.data?.br) {
-          alert("Successful!");
-          navigate(0);
-        }
-      })
-      .catch((error) => {
-        alert(
-          `error status: ${error?.request?.status}  :message: ${error?.response?.data?.error} `
-        );
-        if (error.response?.data?.error == "Signature has expired") {
-          write_local(null);
-          navigate("/loginpage");
-        }
-        navigate(0);
-      });
-  };
-
-  const [open, setOpen] = useState(false);
-  const handleModalOpen = () => setOpen(true);
-  const handleModalClose = () => setOpen(false);
-  const [bookData, setBookData] = useState(book);
-
-  const handleFormChange = (event) => {
-    console.log("event.target.name  ", event?.target?.name);
-    console.log("event.target.value  ", event?.target?.value);
-    setBookData({ ...bookData, [event.target.name]: event.target.value });
-  };
-
-  const handleFormSubmit = () => {
-    console.log("Submitting updated book data:", bookData);
-  };
-  //{console.log(`book :`, book)}
-  return (
-    <>
-      {userData?.user?.role_id == 3 ? (
-        book?.available > 0 ? (
-          <Button
-            variant="contained"
-            size="small"
-            color="primary"
-            onClick={(e) => {
-              handleBorrowBook(book);
-              e.preventDefault();
-            }}
-          >
-            Borrow
-          </Button>
-        ) : (
-          <Button variant="contained" size="small" color="primary" disabled>
-            Borrow
-          </Button>
-        )
-      ) : (
-        <>
-          <Button
-            variant="contained"
-            size="small"
-            color="primary"
-            onClick={handleModalOpen}
-          >
-            Update
-          </Button>
-          <Modal
-            open={open}
-            onClose={handleModalClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-          >
-            <Box
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: 400,
-                bgcolor: "background.paper",
-                border: "2px solid #000",
-                boxShadow: 24,
-                p: 4,
-              }}
-            >
-              <Typography id="modal-modal-title" variant="h6" component="h2">
-                Book : {bookData.title}
-              </Typography>
-              <form onSubmit={handleFormSubmit}>
-                <TextField
-                  label="Title"
-                  name="title"
-                  value={bookData.title}
-                  onChange={handleFormChange}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="Author"
-                  name="author"
-                  value={bookData.author}
-                  onChange={handleFormChange}
-                  fullWidth
-                />
-                <TextField
-                  label="Edition"
-                  name="edition"
-                  type="number"
-                  value={bookData.edition}
-                  onChange={handleFormChange}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="Publisher"
-                  name="publisher"
-                  value={bookData.publisher}
-                  onChange={handleFormChange}
-                  fullWidth
-                />
-                <TextField
-                  label="Publication Date"
-                  name="publicationDate"
-                  type="date"
-                  value={bookData.publicationDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                />
-                <TextField
-                  label="Genre"
-                  name="genre"
-                  value={bookData.genre}
-                  onChange={handleFormChange}
-                  fullWidth
-                />
-                <Button variant="contained" type="submit" color="primary">
-                  Update Book
-                </Button>
-              </form>
-            </Box>
-          </Modal>
-        </>
-      )}
-    </>
-  );
-};
-
 export default BookPage;
-//const filtered = listItems.filter(
-//(item) => console.log(item)
-// item.title.toLowerCase().includes(searchText.toLowerCase()) ||
-// item.publication.toLowerCase().includes(searchText.toLowerCase()) ||
-// item.genre.toLowerCase().includes(searchText.toLowerCase())
-// );
-//<UpdateBookForm />

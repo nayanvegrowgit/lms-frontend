@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Stack, TextField, Button, Typography } from "@mui/material";
-import { read_local, write_local } from "../utils/read_store";
+import { read_local_userdata, write_local_userdata } from "../utils/read_store";
 import { login } from "../utils/logout_login";
 
 export default function LoginPage() {
@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    setUserData(read_local());
+    setUserData(read_local_userdata());
     console.log("userdata in login page  :: ", userData);
     if (userData?.token && userData?.user?.id) {
       navigate("/app/dashboard");
@@ -29,7 +29,7 @@ export default function LoginPage() {
             user: response.data.status.data.user,
             token: response.headers.authorization,
           };
-          write_local(s);
+          write_local_userdata(s);
           console.log("wrote : ", s);
           navigate("/app/dashboard");
         } else {
@@ -37,9 +37,11 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        alert(`Login error, ${error}`);
+        alert(
+          `Login error, ${error} :: message : ${error.response?.data?.message}`
+        );
         if (error.response?.data?.error == "Signature has expired") {
-          write_local(null);
+          write_local_userdata(null);
           navigate("/loginpage");
         }
         window.location.reload();

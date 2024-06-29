@@ -18,7 +18,7 @@ import {
 
 import { styled } from "@mui/material/styles";
 import axios from "axios";
-import { read_local } from "../utils/read_store";
+import { read_local_userdata, write_local_userdata } from "../utils/read_store";
 import { useNavigate } from "react-router-dom";
 const StyledList = styled(List)`
   display: flex;
@@ -47,14 +47,21 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 function BorrowRecords() {
-  const userData = read_local();
+  const userData = read_local_userdata();
   const navigate = useNavigate();
   const [listItems, setlistItems] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const limit = 5;
 
   useEffect(() => {
-    console.log("senging get req to http://localhost:8080/borrow");
+    console.log("senging get req to http://localhost:8080/borrowrecords");
+    const data = {
+      offset: offset,
+      limit: limit,
+    };
+
     axios
-      .get("http://localhost:8080/borrow", {
+      .post("http://localhost:8080/borrowrecords", data, {
         headers: {
           Authorization: String(userData?.token), // Edit the authorization key here
         },
@@ -68,11 +75,11 @@ function BorrowRecords() {
           `error status: ${error?.request?.status}  :message: ${error?.response?.data} `
         );
         if (error.response?.data?.error == "Signature has expired") {
-          write_local(null);
+          write_local_userdata(null);
           navigate("/loginpage");
         }
       });
-  }, []);
+  }, [offset]);
 
   //const filtered = listItems.filter(
   //(item) => console.log(item)
@@ -94,13 +101,11 @@ function BorrowRecords() {
               <TableRow>
                 {[
                   "BrID",
-                  "Book_Id",
-                  "User_Id",
-                  "Title",
-                  "Author",
+                  "User",
+                  "Book_Title",
+                  "Book_Author",
                   "Date_Of_Issue",
                   "Date_Of_Return",
-                  "Action",
                 ].map((labletext) => {
                   return (
                     <StyledTableCell key={labletext} align="center">
@@ -116,10 +121,7 @@ function BorrowRecords() {
                   <StyledTableRow key={br.br_id}>
                     <StyledTableCell align="center">{br.br_id}</StyledTableCell>
                     <StyledTableCell align="center" scope="row">
-                      {br.book_id}
-                    </StyledTableCell>
-                    <StyledTableCell align="center" scope="row">
-                      {br.user_id}
+                      {br.user_name}
                     </StyledTableCell>
                     <StyledTableCell align="center" scope="row">
                       {br.title}
@@ -133,36 +135,39 @@ function BorrowRecords() {
                     <StyledTableCell align="center" scope="row">
                       {br.date_of_return == "" ? "--" : `${br.date_of_return}`}
                     </StyledTableCell>
-                    {/*<StyledTableCell>
-                            {br.date_of_return == "" ? (
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    color="primary"
-                                    onClick={(e) => {
-                                        {
-                                            console.log("br button : ", br);
-                                        }
-                                        handleReturnBook(br);
-                                        e.preventDefault();
-                                    }}
-                                >
-                                    Return
-                                </Button>
-                            ) : (
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    color="primary"
-                                    disabled
-                                >
-                                    Return
-                                </Button>
-                            )}
-                        </StyledTableCell>*/}
                   </StyledTableRow>
                 );
               })}
+              <TableRow>
+                <StyledTableCell align="center" colSpan={1}>
+                  <Button
+                    onClick={(e) => {
+                      setOffset(offset - limit);
+                      e.preventDefault();
+                    }}
+                    disabled={offset == 0 ? true : false}
+                  >
+                    Previous
+                  </Button>
+                </StyledTableCell>
+                <StyledTableCell align="center" colSpan={1}>
+                  <Button
+                    disabled={
+                      listItems
+                        ? listItems.length < limit
+                          ? true
+                          : false
+                        : true
+                    }
+                    onClick={(e) => {
+                      setOffset(offset + limit);
+                      e.preventDefault();
+                    }}
+                  >
+                    Next
+                  </Button>
+                </StyledTableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>
