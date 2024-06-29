@@ -58,9 +58,9 @@ const Item = styled(Paper)(({ theme }) => ({
 const StyledFormRow = styled(Paper)(() => ({
   marginBottom: "9px",
 }));
-const limit = 5;
 
 function BookPage() {
+  const limit = 5;
   const navigate = useNavigate();
   const userData = read_local_userdata();
 
@@ -81,7 +81,8 @@ function BookPage() {
     total: 0,
   });
 
-  const [updateBookData, setUpdateBookData] = useState({
+  const [updatebookData, setUpdateBookData] = useState({
+    id: 0,
     title: "",
     author: "",
     publisher: "",
@@ -93,25 +94,16 @@ function BookPage() {
   const handleBookAddModalOpen = () => setAddBookOpen(true);
   const handleBookAddModalClose = () => setAddBookOpen(false);
 
-  const handleUpdateModalOpen = (book) => {
-    setUpdateBookData({
-      title: book.title,
-      author: book.author,
-      publisher: book.publisher,
-      publication_date: book.publication_date,
-      edition: parseInt(book.edition),
-      genre: book.genre,
-    });
-    setUpdateBookOpen(true);
-  };
-  const handleUpdateModalClose = () => setUpdateBookOpen(false);
+  const handleUpdateBookModalOpen = () => setUpdateBookOpen(true);
+  const handleUpdateBookModalClose = () => setUpdateBookOpen(false);
+
   const handleBookAddFormChange = (event) => {
     setNewBookData({ ...newbookData, [event.target.name]: event.target.value });
     event.preventDefault();
   };
-  const handleUpdateFormChange = (event) => {
+  const handleUpdateBookFormChange = (event) => {
     setUpdateBookData({
-      ...updateBookData,
+      ...updatebookData,
       [event.target.name]: event.target.value,
     });
     event.preventDefault();
@@ -218,7 +210,7 @@ function BookPage() {
       });
   };
 
-  const handleUpdateFormSubmit = () => {
+  const handleUpdateBookFormSubmit = () => {
     console.log("Submitting updated book data:", updatebookData);
     const data = {
       id: updatebookData.id,
@@ -226,8 +218,8 @@ function BookPage() {
       author: updatebookData.author,
       publisher: updatebookData.publisher,
       publication_date: updatebookData.publication_date,
-      edition: parseInt(updatebookData.edition),
       genre: updatebookData.genre,
+      edition: parseInt(updatebookData.edition),
     };
     const headers = {
       Authorization: String(userData?.token),
@@ -237,8 +229,8 @@ function BookPage() {
     axios
       .patch("http://localhost:8080/bookupdate", data, { headers })
       .then((response) => {
-        console.log("add book responce : ", response);
-        setReload(!reload);
+        console.log("update book responce : ", response);
+        //  setReload(!reload);
       })
       .catch((error) => {
         console.log("error : ", error);
@@ -378,8 +370,8 @@ function BookPage() {
                               size="small"
                               color="primary"
                               onClick={(e) => {
-                                e.preventDefault();
                                 handleBorrowBook(book);
+                                e.preventDefault();
                               }}
                             >
                               Borrow
@@ -401,15 +393,24 @@ function BookPage() {
                               size="small"
                               color="primary"
                               onClick={(e) => {
+                                setUpdateBookData({
+                                  id: book.id,
+                                  title: book.title,
+                                  author: book.author,
+                                  publisher: book.publisher,
+                                  publication_date: book.publication_date,
+                                  edition: book.edition,
+                                  genre: book.genre,
+                                });
+                                handleUpdateBookModalOpen();
                                 e.preventDefault();
-                                handleUpdateModalOpen(book);
                               }}
                             >
                               Update
                             </Button>
                             <Modal
                               open={updatebookopen}
-                              onClose={handleUpdateModalClose}
+                              onClose={handleUpdateBookModalClose}
                               aria-labelledby="modal-modal-title"
                               aria-describedby="modal-modal-description"
                             >
@@ -433,21 +434,20 @@ function BookPage() {
                                   component="h2"
                                   margin="10px 0"
                                 >
-                                  Update Book : {book.title}
+                                  Book Details:
                                 </Typography>
                                 <form
                                   onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleUpdateFormSubmit();
-                                    handleUpdateModalClose();
+                                    handleUpdateBookFormSubmit();
+                                    handleUpdateBookModalClose();
                                   }}
                                 >
                                   <StyledFormRow>
                                     <TextField
                                       label="Title"
                                       name="title"
-                                      value={updateBookData.title}
-                                      onChange={handleUpdateFormChange}
+                                      value={updatebookData.title}
+                                      onChange={handleUpdateBookFormChange}
                                       fullWidth
                                       required
                                     />
@@ -456,8 +456,8 @@ function BookPage() {
                                     <TextField
                                       label="Author"
                                       name="author"
-                                      value={updateBookData.author}
-                                      onChange={handleUpdateFormChange}
+                                      value={updatebookData.author}
+                                      onChange={handleUpdateBookFormChange}
                                       fullWidth
                                     />
                                   </StyledFormRow>
@@ -466,8 +466,8 @@ function BookPage() {
                                       label="Edition"
                                       name="edition"
                                       type="number"
-                                      value={updateBookData.edition}
-                                      onChange={handleUpdateFormChange}
+                                      value={updatebookData.edition}
+                                      onChange={handleUpdateBookFormChange}
                                       fullWidth
                                       required
                                     />
@@ -476,8 +476,8 @@ function BookPage() {
                                     <TextField
                                       label="Publisher"
                                       name="publisher"
-                                      value={updateBookData.publisher}
-                                      onChange={handleUpdateFormChange}
+                                      value={updatebookData.publisher}
+                                      onChange={handleUpdateBookFormChange}
                                       fullWidth
                                     />
                                   </StyledFormRow>
@@ -486,8 +486,8 @@ function BookPage() {
                                       label="Publication Date"
                                       name="publication_date"
                                       type="date"
-                                      value={updateBookData.publication_date}
-                                      onChange={handleUpdateFormChange}
+                                      value={updatebookData.publication_date}
+                                      onChange={handleUpdateBookFormChange}
                                       fullWidth
                                       InputLabelProps={{ shrink: true }}
                                     />
@@ -496,11 +496,12 @@ function BookPage() {
                                     <TextField
                                       label="Genre"
                                       name="genre"
-                                      value={updateBookData.genre}
-                                      onChange={handleUpdateFormChange}
+                                      value={updatebookData.genre}
+                                      onChange={handleUpdateBookFormChange}
                                       fullWidth
                                     />
                                   </StyledFormRow>
+
                                   <StyledFormRow>
                                     <Button
                                       variant="contained"
@@ -529,8 +530,8 @@ function BookPage() {
                         size="small"
                         color="primary"
                         onClick={(e) => {
-                          e.preventDefault();
                           handleBookAddModalOpen();
+                          //  e.preventDefault();
                         }}
                       >
                         Add
@@ -565,9 +566,9 @@ function BookPage() {
                           </Typography>
                           <form
                             onSubmit={(e) => {
-                              e.preventDefault();
                               handleBookAddFormSubmit();
                               handleBookAddModalClose();
+                              //   e.preventDefault();
                             }}
                           >
                             <StyledFormRow>

@@ -76,6 +76,7 @@ const UserDashboard = () => {
       case 12:
       case 21:
         console.log("Manage Users");
+        setRouteChild("managemember");
         break;
       case 13:
       case 22:
