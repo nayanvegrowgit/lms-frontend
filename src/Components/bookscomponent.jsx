@@ -66,6 +66,7 @@ function BookPage() {
 
   const [listItems, setlistItems] = useState([]);
   const [reload, setReload] = useState(false);
+  const [searchstring, setSearchString] = useState("");
   const [offset, setOffset] = useState(0);
   const [updatebookopen, setUpdateBookOpen] = useState(false);
   const [addbookopen, setAddBookOpen] = useState(false);
@@ -137,6 +138,7 @@ function BookPage() {
 
     console.log("senging get req to http://localhost:8080/allbook");
     const data = {
+      filter: "%" + searchstring + "%",
       offset: offset,
       limit: limit,
     };
@@ -286,20 +288,51 @@ function BookPage() {
         <Item key={2} elevation={1}>
           {`Available : ${total_num_books[1]}`}
         </Item>
-        <Item key={3} elevation={2}>
-          {`Page Total : ${total_num_books[2]}`}
-        </Item>
-        <Item key={4} elevation={1}>
-          {`Page Available : ${total_num_books[3]}`}
-        </Item>
+        <Box display={"flex"} gap={1} elevation={1} height={"50px"}>
+          <TextField
+            label="Search"
+            name="searchtext"
+            value={searchstring}
+            onChange={(e) => {
+              setSearchString(e.target.value);
+            }}
+            fullWidth
+            required
+          />
+          <Button
+            variant="contained"
+            size="small"
+            color="primary"
+            onClick={(e) => {
+              if (searchstring.length > 0) setReload(!reload);
+              e.preventDefault();
+            }}
+          >
+            Search
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            color="primary"
+            onClick={(e) => {
+              if (searchstring.length > 0) {
+                setSearchString("");
+                setReload(!reload);
+              }
+              e.preventDefault();
+            }}
+          >
+            Reset
+          </Button>
+        </Box>
       </Box>
       <div>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
-                <StyledTableCell align="center" colSpan={10}>
-                  <h3>Books</h3>
+                <StyledTableCell align="left" colSpan={10}>
+                  <Typography>Books</Typography>
                 </StyledTableCell>
               </TableRow>
 

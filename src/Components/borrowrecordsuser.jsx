@@ -52,7 +52,6 @@ function BorrowRecordsUser() {
   const [listItems, setlistItems] = useState([]);
   const [reload, setReload] = useState(false);
   useEffect(() => {
-    console.log("senging get req to http://localhost:8080/book/");
     axios
       .get("http://localhost:8080/borrowedbooks", {
         headers: {
@@ -118,8 +117,8 @@ function BorrowRecordsUser() {
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
-                <StyledTableCell align="center" colSpan={10}>
-                  <h3>Books</h3>
+                <StyledTableCell align="left" colSpan={10}>
+                  <Typography fontSize={28}>BorrowRecords</Typography>
                 </StyledTableCell>
               </TableRow>
               <TableRow>

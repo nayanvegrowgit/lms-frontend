@@ -49,8 +49,9 @@ function ManageMembers() {
 
   const [listItems, setlistItems] = useState([]);
   const [reload, setReload] = useState(false);
+  const [offset, setOffset] = useState(0);
   const [open, setOpen] = useState(false);
-
+  const limit = 5;
   const [member, getData] = useState({
     name: "",
     email: "",
@@ -59,9 +60,13 @@ function ManageMembers() {
   });
 
   useEffect(() => {
-    console.log("get http://localhost:3001/admin/members ", reload);
+    const data = {
+      offset: offset,
+      limit: limit,
+    };
+
     axios
-      .get("http://localhost:3001/admin/members", {
+      .post("http://localhost:3001/admin/members/list", data, {
         headers: {
           Authorization: String(userData?.token), // Edit the authorization key here
         },
@@ -72,16 +77,14 @@ function ManageMembers() {
       })
       .catch((error) => {
         console.log("error :: ", error);
-        alert(
-          `get  : error status: ${error?.request}  :message: ${error?.response?.data}`
-        );
+        alert(`get  : error code: ${error.code}  :message: ${error?.message}`);
         if (error.response?.data?.error == "Signature has expired") {
           write_local_userdata(null);
           alert("Session Signature has expired,\nTrylogin again");
           navigate("/loginpage");
         }
       });
-  }, [reload]);
+  }, [reload, offset]);
 
   const handleActivateDeactivate = (member) => {
     const userData = read_local_userdata();
@@ -92,11 +95,11 @@ function ManageMembers() {
       "Content-Type": "application/json",
     };
     console.log(
-      "senging patch req to http://localhost:3001/admin/admin/librarians/updatestatus/:id"
+      "senging patch req to http://localhost:3001/admin/members/updatestatus/:id"
     );
     axios
       .patch(
-        `http://localhost:3001/admin/admin/librarians/updatestatus/${member.id}`,
+        `http://localhost:3001/admin/members/updatestatus/${member.id}`,
         null,
         {
           headers,
@@ -173,17 +176,10 @@ function ManageMembers() {
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
-                <StyledTableCell align="center" colSpan={6}>
-                  <Typography fontSize={28}>Librarians</Typography>
+                <StyledTableCell align="left" colSpan={4}>
+                  <Typography fontSize={28}>Members</Typography>
                 </StyledTableCell>
-              </TableRow>
-              <TableRow>
-                <StyledTableCell>{"ID"}</StyledTableCell>
-                <StyledTableCell>{"Name"}</StyledTableCell>
-                <StyledTableCell>{"Email"}</StyledTableCell>
-                <StyledTableCell>{"Status"}</StyledTableCell>
-                <StyledTableCell>{"Action"}</StyledTableCell>
-                <StyledTableCell>
+                <StyledTableCell align="right">
                   <>
                     {
                       <Button
@@ -195,10 +191,9 @@ function ManageMembers() {
                           e.preventDefault();
                         }}
                       >
-                        Add
+                        Add New Member
                       </Button>
                     }
-
                     <Modal
                       open={open}
                       onClose={handleModalClose}
@@ -289,19 +284,31 @@ function ManageMembers() {
                   </>
                 </StyledTableCell>
               </TableRow>
+              <TableRow>
+                <StyledTableCell align="center">{"Index"}</StyledTableCell>
+                <StyledTableCell align="right">{"Name"}</StyledTableCell>
+                <StyledTableCell align="right">{"Email"}</StyledTableCell>
+                <StyledTableCell align="right">{"Status"}</StyledTableCell>
+                <StyledTableCell align="right">{"Action"}</StyledTableCell>
+              </TableRow>
             </TableHead>
             <TableBody>
-              {listItems?.map((member) => {
+              {listItems?.map((member, index) => {
                 return (
                   <StyledTableRow key={member?.id}>
-                    <StyledTableCell align="right" scope="row">
-                      {member?.id}
+                    <StyledTableCell align="center">
+                      {offset + index + 1}
                     </StyledTableCell>
-                    <StyledTableCell>{member?.name}</StyledTableCell>
-                    <StyledTableCell>{member?.email}</StyledTableCell>
-                    <StyledTableCell>{member?.status}</StyledTableCell>
-
-                    <StyledTableCell>
+                    <StyledTableCell align="right">
+                      {member?.name}
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      {member?.email}
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      {member?.status}
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
                       <Button
                         variant="contained"
                         size="small"
@@ -317,6 +324,36 @@ function ManageMembers() {
                   </StyledTableRow>
                 );
               })}
+              <TableRow>
+                <StyledTableCell colSpan={4}></StyledTableCell>
+                <StyledTableCell align="right">
+                  <Button
+                    onClick={(e) => {
+                      setOffset(offset - limit);
+                      e.preventDefault();
+                    }}
+                    disabled={offset == 0 ? true : false}
+                  >
+                    Previous
+                  </Button>
+
+                  <Button
+                    disabled={
+                      listItems
+                        ? listItems.length < limit
+                          ? true
+                          : false
+                        : true
+                    }
+                    onClick={(e) => {
+                      setOffset(offset + limit);
+                      e.preventDefault();
+                    }}
+                  >
+                    Next
+                  </Button>
+                </StyledTableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>

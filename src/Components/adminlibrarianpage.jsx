@@ -91,11 +91,11 @@ function AdminLibrarianPage() {
       "Content-Type": "application/json",
     };
     console.log(
-      "senging patch req to http://localhost:3001/admin/admin/librarians/updatestatus/:id"
+      "senging patch req to http://localhost:3001/admin/librarians/updatestatus/:id"
     );
     axios
       .patch(
-        `http://localhost:3001/admin/admin/librarians/updatestatus/${librarian.id}`,
+        `http://localhost:3001/admin/librarians/updatestatus/${librarian.id}`,
         null,
         {
           headers,
@@ -127,11 +127,11 @@ function AdminLibrarianPage() {
       "Content-Type": "application/json",
     };
     console.log(
-      "senging patch req to http://localhost:3001/admin/admin/librarians/promotetoadmin/:id"
+      "senging patch req to http://localhost:3001admin/librarians/promotetoadmin/:id"
     );
     axios
       .patch(
-        `http://localhost:3001/admin/admin/librarians/promotetoadmin/${librarian.id}`,
+        `http://localhost:3001/admin/librarians/promotetoadmin/${librarian.id}`,
         null,
         {
           headers,
@@ -208,12 +208,14 @@ function AdminLibrarianPage() {
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
-                <StyledTableCell align="center" colSpan={6}>
+                <StyledTableCell align="Left" colSpan={6}>
                   <Typography fontSize={28}>Librarians</Typography>
                 </StyledTableCell>
               </TableRow>
               <TableRow>
-                <StyledTableCell>{"ID"}</StyledTableCell>
+                <StyledTableCell align="right" scope="row">
+                  {"Index"}
+                </StyledTableCell>
                 <StyledTableCell>{"Name"}</StyledTableCell>
                 <StyledTableCell>{"Email"}</StyledTableCell>
                 <StyledTableCell>{"Status"}</StyledTableCell>
@@ -326,11 +328,11 @@ function AdminLibrarianPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {listItems?.map((librarian) => {
+              {listItems?.map((librarian, index) => {
                 return (
                   <StyledTableRow key={librarian?.id}>
                     <StyledTableCell align="right" scope="row">
-                      {librarian?.id}
+                      {index + 1}
                     </StyledTableCell>
                     <StyledTableCell>{librarian?.name}</StyledTableCell>
                     <StyledTableCell>{librarian?.email}</StyledTableCell>
